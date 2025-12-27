@@ -22,7 +22,11 @@ sudo dnf install nautilus-python
 
 ### Ubuntu 
 ```
-sudo apt install nautilus-python ou python3-nautilus
+sudo apt install nautilus-python
+```
+ou 
+```
+sudo apt install python3-nautilus
 ```
 _La version Ubuntu peut ne pas fonctionner_
 
