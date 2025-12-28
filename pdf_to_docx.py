@@ -17,7 +17,7 @@ class PdfToDocxExtension(GObject.GObject, Nautilus.MenuProvider):
     def __init__(self):
         super().__init__()
         
-        self.converter_script = os.path.expanduser('~/Documents/Perso/Programmation/PdfConverter/converter.py')
+        self.converter_script = os.path.expanduser('~/PdfConverter/converter.py')
     
     def get_file_items(self, *args):
         """
