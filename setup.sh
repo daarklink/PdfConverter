@@ -140,18 +140,48 @@ echo ""
 # Vérifier que pdf2docx est installé
 print_step "Vérification de pdf2docx..."
 
-if ! python3 -c "import pdf2docx" 2>/dev/null; then
-    print_warning "Le module Python pdf2docx n'est pas installé"
-    if confirm "Voulez-vous l'installer maintenant ?"; then
-        pip install --user pdf2docx
-        print_success "pdf2docx installé"
-    else
-        print_error "Installation annulée. pdf2docx est requis."
-        exit 1
-    fi
-else
-    print_success "pdf2docx est déjà installé"
-fi
+case "$OS_ID" in
+    ubuntu|debian)
+        # Sur Ubuntu/Debian, on utilise pipx
+        if ! command -v pdf2docx &> /dev/null; then
+            print_warning "pdf2docx n'est pas installé"
+            if confirm "Voulez-vous l'installer maintenant (via pipx) ?"; then
+                # Vérifier et installer pipx si nécessaire
+                if ! command -v pipx &> /dev/null; then
+                    print_step "Installation de pipx..."
+                    sudo apt install -y pipx
+                    pipx ensurepath
+                    print_success "pipx installé"
+                fi
+                # Installer pdf2docx avec pipx
+                pipx install pdf2docx
+                print_success "pdf2docx installé"
+                print_warning "Vous devrez peut-être recharger votre shell pour que pdf2docx soit disponible"
+                echo "  Exécutez : source ~/.bashrc (ou ouvrez un nouveau terminal)"
+            else
+                print_error "Installation annulée. pdf2docx est requis."
+                exit 1
+            fi
+        else
+            print_success "pdf2docx est déjà installé"
+        fi
+        ;;
+    *)
+        # Sur les autres systèmes (Fedora, etc.), on utilise pip
+        if ! python3 -c "import pdf2docx" 2>/dev/null; then
+            print_warning "Le module Python pdf2docx n'est pas installé"
+            if confirm "Voulez-vous l'installer maintenant (via pip) ?"; then
+                pip install --user pdf2docx
+                print_success "pdf2docx installé"
+            else
+                print_error "Installation annulée. pdf2docx est requis."
+                exit 1
+            fi
+        else
+            print_success "pdf2docx est déjà installé"
+        fi
+        ;;
+esac
 echo ""
 
 # Créer le répertoire d'installation
