@@ -73,20 +73,67 @@ fi
 print_success "Tous les fichiers requis sont présents"
 echo ""
 
+# Détecter le système d'exploitation
+print_step "Détection du système d'exploitation..."
+
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    OS_ID="$ID"
+    print_success "Système détecté : $NAME"
+else
+    print_error "Impossible de détecter le système d'exploitation"
+    exit 1
+fi
+echo ""
+
 # Vérifier que nautilus-python est installé
 print_step "Vérification de nautilus-python..."
 
-if ! rpm -qa | grep -q nautilus-python; then
-    print_warning "nautilus-python n'est pas installé"
-    if confirm "Voulez-vous l'installer maintenant ?"; then
-        sudo dnf install -y nautilus-python
-        print_success "nautilus-python installé"
+SKIP_NAUTILUS_CHECK=false
+
+case "$OS_ID" in
+    fedora|rhel|centos)
+        PACKAGE_NAME="nautilus-python"
+        PACKAGE_MANAGER="dnf"
+        CHECK_CMD="rpm -qa | grep -q nautilus-python"
+        INSTALL_CMD="sudo dnf install -y nautilus-python"
+        ;;
+    ubuntu|debian)
+        PACKAGE_NAME="python3-nautilus"
+        PACKAGE_MANAGER="apt"
+        CHECK_CMD="dpkg -l | grep -q python3-nautilus"
+        INSTALL_CMD="sudo apt install -y python3-nautilus"
+        ;;
+    *)
+        print_warning "Système d'exploitation non reconnu : $OS_ID"
+        print_warning "Systèmes supportés : Fedora, RHEL, CentOS, Ubuntu, Debian"
+        echo ""
+        echo "Vous devrez installer manuellement le paquet nautilus-python"
+        echo "(ou équivalent pour votre distribution)"
+        echo ""
+        if confirm "Voulez-vous continuer l'installation sans vérification ?"; then
+            SKIP_NAUTILUS_CHECK=true
+            print_warning "Vérification de nautilus-python ignorée"
+        else
+            print_error "Installation annulée"
+            exit 1
+        fi
+        ;;
+esac
+
+if [ "$SKIP_NAUTILUS_CHECK" = false ]; then
+    if ! eval "$CHECK_CMD" 2>/dev/null; then
+        print_warning "$PACKAGE_NAME n'est pas installé"
+        if confirm "Voulez-vous l'installer maintenant ?"; then
+            eval "$INSTALL_CMD"
+            print_success "$PACKAGE_NAME installé"
+        else
+            print_error "Installation annulée. $PACKAGE_NAME est requis."
+            exit 1
+        fi
     else
-        print_error "Installation annulée. nautilus-python est requis."
-        exit 1
+        print_success "$PACKAGE_NAME est déjà installé"
     fi
-else
-    print_success "nautilus-python est déjà installé"
 fi
 echo ""
 
